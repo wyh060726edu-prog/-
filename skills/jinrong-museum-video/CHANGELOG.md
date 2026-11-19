@@ -1,5 +1,9 @@
 # 更新记录
 
+## 2026-11-19（第五次）
+- 开头加首要目标：省时间、省 token；重活能本地就本地，做成一键全自动。
+- 第 3 节加本地配音流程：tools/install_mac.sh（Mac 一键安装）+ tools/peiyin.sh（`peiyin` 一条命令出配音并打包 zip）。
+
 ## 2026-11-19（第四次）
 - 第 3 节配音改为 Claude 用 Fun-CosyVoice3-0.5B 克隆用户声音直接生成（用户听样音后选定），写明安装、生成命令、换参考音方法、别人声音需授权、英文缩写写法、回听核对。
 - 新增 tools/cosyvoice_tts.py（逐句生成 + 字幕时间 + 单句重做）和 tools/setup_cosyvoice.sh（云端预装脚本）。
