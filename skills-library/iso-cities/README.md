@@ -1,0 +1,360 @@
+# iso-cities
+
+Turn any city or postal code into an isometric pixel-art city, rendered from real OpenStreetMap data.
+
+**[Try it in your browser →](https://rayncooper.github.io/iso-cities/)** — no install, nothing uploaded, the whole renderer runs client-side.
+
+```bash
+npx iso-cities "Kreuzberg, Berlin"
+npx iso-cities --postcode 10115 --country DE --theme dusk
+```
+
+![Berlin 10115, daylight](examples/berlin-10115.png)
+
+Give it a place. It geocodes the query, pulls the buildings, roads, water and green space around that point, extrudes every footprint to its real height, and rasterises the result as hard-edged pixel art.
+
+There are **no runtime dependencies**. The polygon rasteriser, the PNG encoder and the bitmap font are all part of the package, so there is nothing to compile and no native canvas binding to fight with.
+
+---
+
+## Contents
+
+- [Install](#install)
+- [Usage](#usage)
+- [Letting the place decide (`--auto`)](#letting-the-place-decide---auto)
+- [Whole regions instead of a square](#whole-regions-instead-of-a-square)
+- [Highlighting an address](#highlighting-an-address)
+- [Themes](#themes)
+- [Choosing a radius](#choosing-a-radius)
+- [Library API](#library-api)
+- [How it works](#how-it-works)
+- [Attribution and fair use](#attribution-and-fair-use)
+- [The outbreak simulation](#the-outbreak-simulation)
+- [Contributing](#contributing)
+
+---
+
+## Install
+
+```bash
+npm install -g iso-cities   # or use npx, no install needed
+```
+
+Requires Node.js 20.11 or newer.
+
+## Usage
+
+```bash
+# Free-form search
+iso-cities "Porto"
+iso-cities "Kreuzberg, Berlin"
+
+# Postal code — always pair it with a country, codes are not unique worldwide
+iso-cities --postcode 10115 --country DE
+iso-cities --postcode 75001 --country FR
+
+# Exact coordinates, skipping the geocoder entirely
+iso-cities --lat 45.4408 --lon 12.3155 --name "Venice"
+
+# Zoom in for chunkier pixels, then upscale 4x for a crisp poster
+iso-cities "Porto" --radius 200 --scale 4 -o porto.png
+
+# The real shape of a postcode district, not a square
+iso-cities --postcode 10115 --country DE --region
+
+# ...with one address picked out in an accent colour
+iso-cities --postcode 10115 --country DE --region \
+           --highlight "Museum für Naturkunde, Berlin"
+```
+
+Run `iso-cities --help` for the full flag list. The most useful ones:
+
+| Flag | Default | What it does |
+| --- | --- | --- |
+| `-r, --radius <m>` | `400` | Half-width of the square to draw, in metres |
+| `-w, --width <px>` | `1024` | Native pixel width, before upscaling |
+| `-s, --scale <n>` | `2` | Nearest-neighbour upscale factor |
+| `-t, --theme <name>` | `daylight` | See [themes](#themes) |
+| `--exaggeration <n>` | `1.35` | Vertical height multiplier |
+| `--seed <n>` | `0` | Changes roof colours and tree placement |
+| `-o, --out <file>` | derived | Output path |
+| `--auto` | off | Let the match decide the framing — see [below](#letting-the-place-decide---auto) |
+| `--json <file>` | — | Also dump the parsed scene as JSON |
+
+Layers can be switched off individually: `--no-buildings`, `--no-roads`, `--no-water`, `--no-greenery`, `--no-trees`, `--no-rails`. Styling has `--no-shadows`, `--no-windows`, `--no-outlines`, `--no-title`.
+
+## Letting the place decide (`--auto`)
+
+One query, and the framing follows what you actually matched:
+
+```bash
+iso-cities "Brandenburger Tor, Berlin" --auto   # one building, picked out with a pin
+iso-cities "Kreuzberg, Berlin" --auto           # a district, drawn around its centre
+iso-cities "Monaco" --auto                      # bigger than a city, drawn as its outline
+```
+
+Nominatim ranks every result down a hierarchy — roughly 4 for a country, 8 for a state, 16 for a city, 26 for a street, 30 for a single building. `--auto` reads that rank:
+
+| What you matched | What you get |
+| --- | --- |
+| Bigger than a city (county, state, country) | Its whole outline, if small enough to fetch |
+| A city, town, district, postcode or street | A radius around its centre |
+| A single address, building or POI | A radius around it, with the building picked out |
+
+The size guard matters more than it sounds. A county is already thousands of square kilometres and a country is hundreds of thousands — far past what the public Overpass API will serve — so `--auto` falls back to the centre and says why rather than issuing a query that is certain to fail.
+
+That check is done in two steps, because judging a shape by its bounding box is unreliable: Monaco's box is 262 km² for a country of about 2. So the box is only a cheap filter with generous slack, and the real area is measured once the outline is actually in hand.
+
+`--region` still overrides everything if you want a specific city drawn as its outline.
+
+## Whole regions instead of a square
+
+`--region` drops the square entirely and draws the place's actual outline — a postcode district, a city boundary, a borough. The geocoder returns the matched object's own geometry, and that shape becomes the ground plane.
+
+```bash
+iso-cities --postcode 10115 --country DE --region
+iso-cities "Delft, Netherlands" --region --no-trees
+```
+
+![Postcode 10115 drawn as its real shape](examples/berlin-10115-region.png)
+
+Everything lying flat on the ground — roads, water, parks, shadows — is cut to the boundary exactly, by rasterising it once into a coverage mask rather than clipping thousands of polygons against a 2000-vertex concave shape. Buildings and trees stand up out of the ground plane, so they are filtered by containment instead and their roofs are free to rise above the silhouette.
+
+If the geocoder has no outline for the match — a street address, a bare coordinate — the render falls back to `--radius` and says so.
+
+**Regions get big.** A postcode district is a couple of square kilometres and renders in seconds. A whole municipality is a different order of magnitude:
+
+| Query | Area | Elements | Buildings |
+| --- | --- | --- | --- |
+| `--postcode 10115 --country DE` | 2.4 km² | 17k | 1.9k |
+| `"Delft, Netherlands"` | 24 km² | 95k | 36k |
+
+Both work. Above 25 km² you get a warning, and `--no-trees` is worth passing; past a hundred or so the public Overpass API becomes the bottleneck long before the renderer does.
+
+At municipal scale individual buildings fall below a pixel, so outlines are dropped automatically and the render becomes a tonal map of the built fabric — which is its own kind of useful:
+
+![Delft drawn as its whole municipal boundary](examples/delft-region.png)
+
+## Highlighting an address
+
+`--highlight` singles out one address: the matching building is painted in an accent colour and a pin is dropped on it. The rest of the city keeps its colour — the accent reads clearly without draining everything else, though `--desaturate` will do that if you want it.
+
+```bash
+iso-cities --postcode 10115 --country DE --region \
+           --highlight "Museum für Naturkunde, Berlin"
+
+# Or an exact point, and a different accent
+iso-cities "Porto" --highlight-lat 41.1408 --highlight-lon -8.6120 \
+           --highlight-color '#00d4ff'
+```
+
+![The Naturkundemuseum picked out inside postcode 10115](examples/berlin-highlight.png)
+
+The address is geocoded, then matched to the building whose footprint contains it. Address nodes in OSM often sit on the pavement or at a plot entrance rather than inside the building, so a miss falls back to the nearest building within 75 m — far enough to catch those, close enough not to silently grab one across the street. The console reports which of the two happened, and the highlighted address becomes the image's subtitle.
+
+The pin is sized from the canvas rather than from world units, so it stays findable whether the building is 80 pixels across or half of one, and it is drawn after every other sprite so nothing can occlude it.
+
+| Flag | What it does |
+| --- | --- |
+| `--highlight <address>` | Geocode and spotlight this address |
+| `--highlight-lat/-lon` | Spotlight an exact coordinate instead |
+| `--center-on-highlight` | Frame the render on the address, not the place |
+| `--highlight-label <text>` | Override the drawn label |
+| `--highlight-color <hex>` | Accent colour (default `#ff4a2b`) |
+| `--no-marker` | Colour the building but skip the pin |
+| `--desaturate` | Drain the colour from everything but the match |
+
+### Centring on the address
+
+By default the frame is centred on whatever the *place* query resolved to, which for a big city is its centroid — so a highlighted address can land anywhere in the picture, or outside it entirely. `--center-on-highlight` moves the origin to the address and keeps `--radius` around it:
+
+```bash
+iso-cities "Berlin" --highlight "Museum für Naturkunde" \
+           --center-on-highlight --radius 250
+```
+
+![The Naturkundemuseum centred in 250 m of Berlin](examples/berlin-centred.png)
+
+`--centre-on-highlight` works too. The flag has no effect with `--region`, where the boundary decides the framing — you get a warning rather than silence.
+
+## Themes
+
+`iso-cities --themes` lists them. Twelve ship in the box:
+
+| Theme | Look |
+| --- | --- |
+| `daylight` | Clear midday light, warm roofs, dry pavement |
+| `dusk` | Low sun, long blue shadows, the first lights on |
+| `night` | Deep night, windows glowing, streets barely lit |
+| `noir` | Greyscale, high contrast |
+| `gameboy` | The original four-tone DMG palette, and nothing else |
+| `blueprint` | White line-work on drafting blue, like a site plan |
+| `sepia` | Aged paper and brown ink, like a survey from 1890 |
+| `neon` | Synthwave after midnight — mostly dark, selectively lit |
+| `autumn` | Late October, turning leaves and low warm light |
+| `arctic` | Snow on the ground and a pale winter sky |
+| `newsprint` | Four tones of grey ink, like a broadsheet diagram |
+| `candy` | Soft pastels, toy-town colours |
+
+Venice at dusk and in Game Boy green, same query, same seed:
+
+| `dusk` | `gameboy` |
+| --- | --- |
+| ![Venice at dusk](examples/venice-dusk.png) | ![Venice in Game Boy green](examples/venice-gameboy.png) |
+
+A theme declares about a dozen key colours; greens, road tones, shadows and shading steps are derived from those, so the palette stays internally consistent. A theme can also declare a hard colour list that every derived value is snapped to — that is how `gameboy` stays honestly four-tone.
+
+## Choosing a radius
+
+Radius is the single most important setting, because it decides how many pixels each metre gets.
+
+| Radius | Pixels per metre (at `--width 1024`) | Reads as |
+| --- | --- | --- |
+| `150` | ~1.7 | Individual houses, windows, garden trees |
+| `400` | ~0.6 | A neighbourhood; the default |
+| `1000` | ~0.25 | District shape, buildings become texture |
+
+Detail appears as room allows: **windows** are drawn above ~0.55 px/m, **railway sleepers** above ~0.8 px/m. Below that they would be sub-pixel noise, so they are skipped rather than smeared.
+
+Larger radii also mean far more map data. Past about 1200 m in a dense city centre, expect Overpass to be slow or to refuse the query — that is a limit of the free public API, not of the renderer.
+
+Berlin at 140 m, where windows and lit facades come into their own:
+
+![Berlin at 140 m radius, dusk](examples/berlin-closeup-dusk.png)
+
+## Library API
+
+```ts
+import { renderCity } from 'iso-cities';
+import { writeFile } from 'node:fs/promises';
+
+const result = await renderCity(
+  { postcode: '10115', country: 'DE' },
+  { radius: 350, theme: 'dusk', width: 1200, scale: 2 },
+);
+
+await writeFile('berlin.png', result.png);
+console.log(result.scene.stats); // { buildings: 253, roads: 569, ... }
+```
+
+The pipeline is also exposed step by step, which is what you want if you are rendering the same place in several themes — the network work happens once:
+
+```ts
+import { geocode, fetchOsmData, buildScene, renderScene, encodePng, bboxAround } from 'iso-cities';
+
+const place = await geocode({ q: 'Porto' });
+const data = await fetchOsmData(bboxAround(place.centre, 300));
+const scene = buildScene(data, { place, radius: 300 });
+
+for (const theme of ['daylight', 'noir', 'gameboy']) {
+  const image = renderScene(scene, { theme, width: 900, scale: 2 });
+  await writeFile(`porto-${theme}.png`, encodePng(image.raster.data, image.width, image.height));
+}
+```
+
+Renders are **deterministic**: the same query, seed and options always produce byte-identical output.
+
+### In the browser
+
+The renderer core never touched Node in the first place — only PNG encoding, the disk cache and the CLI did. So `iso-cities/browser` needs no bundler, no polyfills and no shims:
+
+```js
+import { renderCityToImageData, MemoryCache } from 'iso-cities/browser';
+
+const cache = new MemoryCache();
+const { imageData, scene } = await renderCityToImageData({ q: 'Porto' }, { cache, radius: 300 });
+
+canvas.width = imageData.width;
+canvas.height = imageData.height;
+canvas.getContext('2d').putImageData(imageData, 0, 0);
+```
+
+The raster is already RGBA in exactly `ImageData`'s layout, so there is no format conversion. PNG encoding is skipped entirely — `canvas.toBlob()` does it natively, faster and smaller than shipping a deflate implementation to the browser.
+
+Both Nominatim and Overpass send `Access-Control-Allow-Origin: *`, so this runs entirely client-side with no proxy. Two caveats worth knowing:
+
+- Browsers **forbid setting a custom User-Agent**, so identification falls to the `Referer` header your page sends. Read [ATTRIBUTION.md](ATTRIBUTION.md) before deploying this anywhere busy.
+- The disk cache is replaced by an in-memory LRU, so a page reload starts cold.
+
+The demo page under [`web/`](web) is the whole thing in about 200 lines. `npm run serve` builds and serves it at `localhost:8080`.
+
+## How it works
+
+```
+query ──▶ Nominatim ──▶ centre point
+                            │
+                            ▼
+                     Overpass (bbox) ──▶ ways, relations, nodes
+                                              │
+                                              ▼
+                          project to local metres, clip to the square,
+                          classify tags, estimate heights, scatter trees
+                                              │
+                                              ▼
+                              painter's algorithm, back to front
+                                              │
+                                              ▼
+                                        PNG (own encoder)
+```
+
+A few decisions worth knowing about:
+
+**Projection.** A 2:1 dimetric projection — one metre east is 1 unit right and 0.5 down. The whole-number ratio means tile edges land on exact pixel diagonals instead of shimmering. Latitude and longitude are flattened with a local equirectangular approximation around the query centre, which at these distances is accurate to well under a pixel.
+
+**Heights.** Read from `height`, else `building:levels × 3.2 m`, else a per-type default (a `house` is 6.5 m, `apartments` 16 m, a `cathedral` 30 m). Values are clamped to 2–400 m, because OSM contains the occasional 99999-metre shed.
+
+**Walls.** For each footprint edge, the outward normal decides whether that face is visible at all, and its angle against the light decides its brightness — quantised to four flat steps, because smooth gradients look muddy at this resolution.
+
+**Road width.** The isometric transform preserves area up to a constant, so dividing a segment's projected area by its projected length gives its perpendicular screen width exactly. A road running "into" the screen is correctly drawn wider than one running across it.
+
+**Determinism.** Every visual variation — roof colour, height jitter, tree placement, which windows are lit — is a hash of the feature's OSM id and the global seed. Nothing calls `Math.random()`.
+
+**Text.** A 5×7 bitmap font is bundled. Accents are composed rather than enumerated: text is NFD-normalised and combining marks are stamped above or below the base letter, so `Köln`, `Kraków` and `Genève` all render correctly without hundreds of precomposed glyphs.
+
+## Attribution and fair use
+
+Map data comes from **OpenStreetMap** and is licensed under the [Open Database License](https://opendatacommons.org/licenses/odbl/). Images you produce with this tool are derived from that data.
+
+**If you publish a render, it must credit "© OpenStreetMap contributors."** The renderer draws that credit into the image by default and also writes it into the PNG metadata. `--no-attribution` exists for cases where you are placing the credit elsewhere — such as a caption or an about page — not for removing it.
+
+This tool talks to volunteer-run infrastructure. It plays by the rules on your behalf: a descriptive User-Agent, at most one request per second per host, retries with backoff, and responses cached on disk for a week so re-rendering costs nothing. Please do not remove those limits to bulk-render, and consider [running your own Overpass instance](https://wiki.openstreetmap.org/wiki/Overpass_API/Installation) if you need volume.
+
+See [ATTRIBUTION.md](ATTRIBUTION.md) for the details and policy links.
+
+## The outbreak simulation
+
+`outbreak/` is a separate, self-contained piece built on the package: a stochastic metapopulation epidemic model over the Rheinland and the Ruhr, rendered to an isometric pixel-art map. Patient zero is **Eicken**, in Mönchengladbach; it spreads along the real road network and reaches every Kreis in the region.
+
+```bash
+node outbreak/fetch-data.mjs   # once — freezes boundaries, populations, roads
+node outbreak/render.mjs       # simulate, draw, encode → outbreak/out/*.mp4
+node outbreak/render.mjs --frames 0,40,90   # a few stills instead of the film
+node outbreak/render.mjs --sim-only         # recompute the model, skip the pixels
+```
+
+**The data.** 38 Kreise and kreisfreie Städte from OpenStreetMap, subdivided into 646 compartments — the Gemeinden of the Kreise, the Stadtteile of the cities — with populations from Wikidata (P1082, latest statement). Two cities have no districts in OSM at all and enter the model as a single compartment each; that is a real gap in the map data, not a fallback. The Rheinland/Ruhr region is defined by the three Regierungsbezirke Düsseldorf, Köln and Arnsberg, tested as actual polygons so the bounding box's Belgian and Hessian corners stay out.
+
+**The model.** Each compartment carries susceptible/exposed/infectious/turned counts. Transmission is density-weighted, so an apartment district falls from the inside out; walkers leave a compartment as whole people allocated across its twelve nearest neighbours by largest remainder; and a fresh spark usually dies out, with the escape probability falling as the arrival grows — one zombie walking into Düsseldorf is lost, one walking into a village of 400 is a disaster. That last term is what gives the front its ragged edge instead of a clean fill.
+
+Everything is seeded, so a given `--seed` reproduces the run exactly, and the film is a pure function of the simulation plus the camera.
+
+**The picture.** The map is rasterised once — each compartment's screen pixels are collected into an index list, and a frame repaints only the compartments whose state changed, which is a handful on most days. Static line work (Kreis borders, 45k road segments) goes into a sparse overlay blitted on top. The camera opens tight on Eicken and pulls back to the region as the outbreak escapes the city; the pull-back is the story.
+
+Numbers for the default seed (20260914): day 0 Eicken, day 18 Kreis Viersen, day 24 Köln, day 51 Dortmund, day 105 Kreis Soest, 141 days to 99% of 13.3 million. `outbreak/data/outbreak.json` has the full per-Kreis timeline.
+
+## Contributing
+
+Bug reports, new themes and better tag coverage are all welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+```bash
+git clone https://github.com/RayNCooper/iso-cities.git
+cd iso-cities
+npm install
+npm test          # 165 tests, no network access required
+npm run build
+node dist/cli.js "your home town"
+```
+
+## License
+
+[MIT](LICENSE) for the source code. Map data is ODbL, see above.

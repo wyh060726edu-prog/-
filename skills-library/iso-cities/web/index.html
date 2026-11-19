@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>iso-cities — turn any city into isometric pixel art</title>
+    <meta
+      name="description"
+      content="Type a city, a postal code or an address and get it back as isometric pixel art, built from real OpenStreetMap buildings. Twelve themes, whole-region outlines, free and open source. Runs entirely in your browser."
+    />
+    <link rel="canonical" href="https://rayncooper.github.io/iso-cities/" />
+    <meta name="theme-color" content="#4f46e5" />
+    <meta name="color-scheme" content="light dark" />
+
+    <!-- Share card. The image is a genuine render produced by the library at
+         build time, not a mockup, so it cannot drift from the real output. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="iso-cities" />
+    <meta property="og:url" content="https://rayncooper.github.io/iso-cities/" />
+    <meta property="og:title" content="iso-cities — turn any city into isometric pixel art" />
+    <meta
+      property="og:description"
+      content="Type a city, a postal code or an address and get it back as isometric pixel art, built from real OpenStreetMap buildings. Twelve themes, runs entirely in your browser."
+    />
+    <meta property="og:image" content="https://rayncooper.github.io/iso-cities/og.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="An isometric pixel-art rendering of the Reichstag and the Tiergarten in Berlin."
+    />
+    <meta property="og:locale" content="en_GB" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="iso-cities — turn any city into isometric pixel art" />
+    <meta
+      name="twitter:description"
+      content="Type a city, a postal code or an address and get it back as isometric pixel art, built from real OpenStreetMap buildings."
+    />
+    <meta name="twitter:image" content="https://rayncooper.github.io/iso-cities/og.png" />
+    <meta
+      name="twitter:image:alt"
+      content="An isometric pixel-art rendering of the Reichstag and the Tiergarten in Berlin."
+    />
+
+    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+
+    <link rel="stylesheet" href="./fonts.css" />
+    <link rel="stylesheet" href="./style.css" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "iso-cities",
+        "url": "https://rayncooper.github.io/iso-cities/",
+        "applicationCategory": "DesignApplication",
+        "operatingSystem": "Any, runs in a web browser",
+        "browserRequirements": "Requires JavaScript and a modern browser",
+        "description": "Turn any city, postal code or address into isometric pixel art, rendered from OpenStreetMap data entirely in the browser.",
+        "image": "https://rayncooper.github.io/iso-cities/og.png",
+        "license": "https://opensource.org/licenses/MIT",
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+        "author": { "@type": "Organization", "name": "Olio", "url": "https://olio.solutions" },
+        "codeRepository": "https://github.com/RayNCooper/iso-cities",
+        "keywords": "isometric, pixel art, OpenStreetMap, map, generative art, cartography"
+      }
+    </script>
+  </head>
+  <body>
+    <header class="masthead">
+      <div class="masthead-inner">
+        <h1>iso&#8209;cities</h1>
+        <p class="tagline">
+          Any city or postal code, drawn as isometric pixel art from real OpenStreetMap data.
+          Everything runs in your browser — no server, nothing uploaded.
+        </p>
+        <p class="links">
+          <a href="https://github.com/RayNCooper/iso-cities">Source on GitHub</a>
+          <a href="https://www.npmjs.com/package/iso-cities">npm</a>
+        </p>
+      </div>
+    </header>
+
+    <main>
+      <form id="controls" autocomplete="off">
+        <div class="row primary">
+          <label class="grow">
+            <span>A place, a postal code, or an address</span>
+            <input
+              id="query"
+              type="text"
+              value="Reichstag, Berlin"
+              placeholder="Reichstag, Berlin — or Kreuzberg, or 10115 Berlin"
+              required
+            />
+          </label>
+          <button id="render" type="submit">Render</button>
+        </div>
+
+        <p class="examples">
+          <span>Try</span>
+          <button type="button" class="chip" data-example="Reichstag, Berlin">a building</button>
+          <button type="button" class="chip" data-example="Museum für Naturkunde, Berlin">
+            an address
+          </button>
+          <button type="button" class="chip" data-example="Kreuzberg, Berlin">a district</button>
+          <button type="button" class="chip" data-example="10115 Berlin">a postal code</button>
+          <button type="button" class="chip" data-example="Venice, Italy">a city</button>
+          <button type="button" class="chip" data-example="Bruges, Belgium">an old town</button>
+        </p>
+
+        <p class="hint">
+          Type a single building or an address and it gets picked out with a pin. Type a city,
+          district or postal code and you get the streets around its centre. Anything larger than a
+          city is drawn as its own outline, if it is small enough to fetch.
+        </p>
+
+        <div class="field">
+          <span class="field-label">
+            Theme
+            <em id="themeHint">switching is instant — no new download</em>
+          </span>
+          <div id="themeGrid" class="theme-grid" role="radiogroup" aria-label="Theme"></div>
+        </div>
+
+        <div class="row sliders">
+          <label>
+            <span>Detail <output id="radiusOut">400</output> m across</span>
+            <input id="radius" type="range" min="80" max="1200" step="20" value="400" />
+          </label>
+          <label>
+            <span>Size <output id="widthOut">900</output> px</span>
+            <input id="width" type="range" min="400" max="1600" step="100" value="900" />
+          </label>
+          <div class="toggle-cluster">
+            <label class="check">
+              <input id="region" type="checkbox" />
+              <span>Force whole region</span>
+            </label>
+            <label class="check">
+              <input id="trees" type="checkbox" checked />
+              <span>Trees</span>
+            </label>
+            <label class="check">
+              <input id="shadows" type="checkbox" checked />
+              <span>Shadows</span>
+            </label>
+          </div>
+        </div>
+
+      </form>
+
+      <p id="status" class="status" role="status" aria-live="polite">Ready.</p>
+
+      <div id="stage" class="stage">
+        <canvas id="canvas" width="900" height="500"></canvas>
+
+        <!-- Shown while a render is in flight: a little city assembling itself. -->
+        <div id="loader" class="loader" aria-hidden="true">
+          <div class="loader-card">
+            <svg class="iso" viewBox="0 0 140 108" role="img" aria-label="Building a city">
+              <ellipse class="iso-ground" cx="70" cy="62" rx="52" ry="26" />
+              <g class="iso-cube" style="--i: 0">
+                <polygon class="f-top" points="70,27.5 83,34 70,40.5 57,34" />
+                <polygon class="f-left" points="57,34 70,40.5 70,60.5 57,54" />
+                <polygon class="f-right" points="83,34 70,40.5 70,60.5 83,54" />
+              </g>
+              <g class="iso-cube" style="--i: 1">
+                <polygon class="f-top" points="57,34 70,40.5 57,47 44,40.5" />
+                <polygon class="f-left" points="44,40.5 57,47 57,75 44,68.5" />
+                <polygon class="f-right" points="70,40.5 57,47 57,75 70,68.5" />
+              </g>
+              <g class="iso-cube" style="--i: 2">
+                <polygon class="f-top" points="83,34 96,40.5 83,47 70,40.5" />
+                <polygon class="f-left" points="70,40.5 83,47 83,63 70,56.5" />
+                <polygon class="f-right" points="96,40.5 83,47 83,63 96,56.5" />
+              </g>
+              <g class="iso-cube" style="--i: 3">
+                <polygon class="f-top" points="70,40.5 83,47 70,53.5 57,47" />
+                <polygon class="f-left" points="57,47 70,53.5 70,77.5 57,71" />
+                <polygon class="f-right" points="83,47 70,53.5 70,77.5 83,71" />
+              </g>
+            </svg>
+            <p class="loader-text" id="loaderText">Building your city…</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="row actions">
+        <button id="download" type="button" disabled>Download PNG</button>
+        <button id="share" type="button">Copy link</button>
+        <span id="stats" class="stats"></span>
+      </div>
+
+      <section class="notes">
+        <h2>What you are looking at</h2>
+        <p>
+          The place is geocoded with Nominatim, the buildings, roads, water and green space around
+          it come from the Overpass API, and every footprint is extruded to its real height and
+          drawn back to front in a 2:1 isometric projection. The rasteriser and the bitmap font are
+          part of the library; no canvas drawing API is involved beyond handing over finished pixels.
+        </p>
+        <p>
+          Map data is fetched once and kept, so changing the theme, the size or the shadows
+          re-renders from what is already in memory. Only the place, the detail level and the
+          highlight need a new download.
+        </p>
+        <p class="credit">
+          Map data ©
+          <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>, licensed
+          under the ODbL. Images you save keep that credit drawn in. Please be gentle with the
+          public APIs — requests are rate limited to one per second.
+        </p>
+      </section>
+
+      <footer class="colophon">
+        <span>An open-source experiment by <a href="https://olio.solutions">Olio</a>.</span>
+        <a href="https://github.com/RayNCooper/iso-cities">MIT licensed</a>
+      </footer>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
