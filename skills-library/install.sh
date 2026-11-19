@@ -10,7 +10,6 @@ link "$LIB/diorama" diorama
 link "$LIB/anatomy" anatomy
 link "$LIB/claude-drawing-skill" claude-drawing
 link "$LIB/codixel" codixel
-link "$LIB/pixel-path" pixel-path
 link "$LIB/3dviz-pro-max/skills/3dviz-pro-max" 3dviz-pro-max
 link "$LIB/claude-animated-shorts" cartoon-3d-short
 link "$LIB/weilanx-claude-videos/.claude/skills/weilanx-creator-pixel-video" weilanx-pixel-video

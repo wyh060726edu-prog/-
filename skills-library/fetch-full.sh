@@ -6,7 +6,7 @@ cd "$(dirname "$0")"
 declare -A UP=(
   [diorama]=sloemo01 [noxe-pixel-engine]=danieljan-design [anatomy]=wheresryan22
   [claude-drawing-skill]=cloveric [weilanx-claude-videos]=Azure12355 [codixel]=mankidev
-  [iso-cities]=RayNCooper [Three-geo-play]=lorenzoMezza [pixel-path]=jonwheatley
+  [iso-cities]=RayNCooper [Three-geo-play]=lorenzoMezza
   [3dviz-pro-max]=viettranx [claude-animated-shorts]=mromidev [blender-skills]=arjun988
 )
 names=("$@"); [ ${#names[@]} -eq 0 ] && names=("${!UP[@]}")
