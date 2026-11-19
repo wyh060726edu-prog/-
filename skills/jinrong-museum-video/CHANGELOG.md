@@ -1,5 +1,8 @@
 # 更新记录
 
+## 2026-11-19（第三次）
+- 补回被覆盖的内容：第 4B 节动效手法库、第 4C 节连贯与画面密度（注明主要用于动画段）、台词口吻、MV 空镜 bgm 抬高、馆长指向、素材站与画面不错乱、数据查证/合规/发布、GitHub 同步规则（新增：要在最新版上改）。
+
 ## 2026-11-19（第二次）
 - 同步 claude.ai 上当前保存的版本。
 - 第 4 节开头新增：主风格按题材分（具象题材以真实影像为主、抽象题材以 Remotion 动画为主，同片按段落分；素材与内容精确匹配；用户不露脸）；开工先读 GitHub 视频 skills 库（FredTalk、claude-remotion-skill、huashu-art-motion、hyperframes、OpenMontage、lemo-opuscar、pixelfx、video-shotcraft）；必须用动画的场景要写实精细。
