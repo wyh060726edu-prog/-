@@ -1,0 +1,16 @@
+{
+  "name": "three-geo-play-playground",
+  "private": true,
+  "type": "module",
+  "description": "Try and debug ThreeGeoPlay from its source",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "three": "^0.183.2"
+  },
+  "devDependencies": {
+    "vite": "^7.3.1"
+  }
+}

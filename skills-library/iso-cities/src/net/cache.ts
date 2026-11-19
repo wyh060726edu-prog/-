@@ -1,0 +1,119 @@
+/**
+ * Response caching, in a form that works anywhere.
+ *
+ * Caching is not an optimisation here so much as good citizenship: re-running
+ * a render while tweaking colours should not send another query to a
+ * volunteer-run Overpass instance.
+ *
+ * This module is deliberately free of Node built-ins so it can be bundled for
+ * the browser. The on-disk implementation lives in `cache-node.ts`.
+ */
+
+export const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Anything that can store a response body against a key. */
+export interface CacheLike {
+  get(key: string, maxAgeMs?: number): Promise<string | null>;
+  set(key: string, value: string): Promise<void>;
+}
+
+/**
+ * FNV-1a with a murmur3 finalizer, run over four seeds to give 128 bits.
+ *
+ * A real digest would mean pulling in `node:crypto`, which does not exist in
+ * a browser. Cache keys need collision resistance, not cryptographic
+ * strength, and four independently-avalanched lanes are far more than enough.
+ */
+function lane(input: string, seed: number): number {
+  let h = seed >>> 0;
+  for (let i = 0; i < input.length; i++) {
+    h ^= input.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  h ^= input.length;
+  h ^= h >>> 16;
+  h = Math.imul(h, 0x85ebca6b);
+  h ^= h >>> 13;
+  h = Math.imul(h, 0xc2b2ae35);
+  h ^= h >>> 16;
+  return h >>> 0;
+}
+
+const LANE_SEEDS = [0x811c9dc5, 0x9e3779b1, 0x7feb352d, 0x2545f491];
+
+export function cacheKey(...parts: string[]): string {
+  const input = parts.join(' ');
+  let out = '';
+  for (const seed of LANE_SEEDS) {
+    out += lane(input, seed).toString(16).padStart(8, '0');
+  }
+  return out;
+}
+
+interface MemoryEntry {
+  value: string;
+  storedAt: number;
+}
+
+/**
+ * An in-process cache. This is what the browser build uses, and it is handy in
+ * tests and short-lived scripts where touching the disk would be pointless.
+ */
+export class MemoryCache implements CacheLike {
+  private readonly entries = new Map<string, MemoryEntry>();
+  private readonly maxAgeMs: number;
+  private readonly maxEntries: number;
+  /** Injected so tests can control expiry without waiting. */
+  private readonly now: () => number;
+
+  constructor(options: { maxAgeMs?: number; maxEntries?: number; now?: () => number } = {}) {
+    this.maxAgeMs = options.maxAgeMs ?? 7 * DAY_MS;
+    this.maxEntries = options.maxEntries ?? 64;
+    this.now = options.now ?? (() => Date.now());
+  }
+
+  get size(): number {
+    return this.entries.size;
+  }
+
+  async get(key: string, maxAgeMs = this.maxAgeMs): Promise<string | null> {
+    const entry = this.entries.get(key);
+    if (!entry) return null;
+
+    const age = this.now() - entry.storedAt;
+    // Past the cache's own limit the entry is genuinely dead and can go. Past
+    // only the caller's tighter limit it is merely not fresh enough for them —
+    // dropping it would evict data a laxer caller would still accept, and
+    // geocoding (30 days) and map data (7 days) share this instance.
+    if (age > this.maxAgeMs) {
+      this.entries.delete(key);
+      return null;
+    }
+    if (age > maxAgeMs) return null;
+    // Refresh recency for the eviction order below.
+    this.entries.delete(key);
+    this.entries.set(key, entry);
+    return entry.value;
+  }
+
+  async set(key: string, value: string): Promise<void> {
+    this.entries.delete(key);
+    this.entries.set(key, { value, storedAt: this.now() });
+    // Map preserves insertion order, so the first key is the oldest touched.
+    while (this.entries.size > this.maxEntries) {
+      const oldest = this.entries.keys().next();
+      if (oldest.done) break;
+      this.entries.delete(oldest.value);
+    }
+  }
+
+  clear(): void {
+    this.entries.clear();
+  }
+}
+
+/** Reads an environment variable where one exists, and nowhere else. */
+export function envVar(name: string): string | undefined {
+  if (typeof process === 'undefined' || !process.env) return undefined;
+  return process.env[name];
+}
