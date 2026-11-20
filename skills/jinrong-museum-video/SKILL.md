@@ -39,7 +39,7 @@ description: "Use when making a 金融博物馆 Douyin finance-explainer video (
 - 换参考音：用户发一段 5–15 秒、干净无 bgm、只有一个人说话的录音，配上逐字一致的原话（不给就用 SenseVoice 转写后请用户核对），存到 AI配音/ 下并在项目记忆写明。用别人的声音必须先有本人授权；明星、公众人物、熟人的声音没授权不能克隆（侵犯声音权，抖音也会处理）。
 - 台词写法：英文缩写写成中文或拆开（APEC → 亚太经合组织，或「A-P-E-C」），不然会念糊；多音字拿不准写拼音提示。
 - 生成后：SenseVoice 回听转写逐句比对台词，漏字、错字、念糊的句子用 --only 重做；语气柔和不激情；铺垫段 1.1–1.25 倍速，高潮和结尾 1.0。
-- 本地优先（2026-11-19 用户定）：配音默认在用户 MacBook Pro 上跑。用户一次性在终端粘贴 `curl -fsSL https://raw.githubusercontent.com/wyh060726edu-prog/-/main/skills/jinrong-museum-video/tools/install_mac.sh | bash` 装好；之后 Claude 交 `xxx_配音稿.txt`，用户下载到「下载」文件夹，终端输入 `peiyin`，把桌面「配音输出」里的 zip 发回来，Claude 解压后直接用 voice.wav + voice.json。参考音 ref_*.wav（加同名 .txt 写原话）放「下载」里，peiyin 自动换上。用户电脑连不上线程（组织要求受信任设备），Claude 不能远程跑。
+- 在哪跑（2026-11-20 用户定）：默认云端后台跑（启动脚本已预装，生成时同时做画面，不耽误交付）；用户 Mac 本地只作备用（本地每期约省 15 分钟，但要用户多跑命令）。本地用法：用户一次性在终端粘贴 `curl -fsSL https://raw.githubusercontent.com/wyh060726edu-prog/-/main/skills/jinrong-museum-video/tools/install_mac.sh | bash` 装好；之后 Claude 交 `xxx_配音稿.txt`，用户下载到「下载」文件夹，终端输入 `peiyin`，把桌面「配音输出」里的 zip 发回来，Claude 解压后直接用 voice.wav + voice.json。参考音 ref_*.wav（加同名 .txt 写原话）放「下载」里，peiyin 自动换上。用户电脑连不上线程（组织要求受信任设备），Claude 不能远程跑。
 - 用户已经录好的配音（如 APEC）照用原件，Claude 切句对齐（sherpa-onnx sense-voice）。
 - 不用：F5-TTS、Fish Speech/OpenAudio、Spark-TTS（模型不可商用）；Kokoro 机器味重。
 
