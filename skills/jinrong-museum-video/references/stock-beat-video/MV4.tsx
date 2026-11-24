@@ -47,7 +47,8 @@ const headAt = (f: number) => {
   return h;
 };
 const wcAt = (f: number) => 22 + (I20 + 5 - IPEAK - 22) * inoutc(k01(f, T1 + 8, 30));
-const HX = 790, CL = 40, CT = 640, CB = 1440;
+const HX = 790, CL = 40, CT = 700, CB = 1560;
+// 抖音安全区（v5）：上 230 以下、下 1330 以上；左右各裁约 56px；y>1000 时右侧 890 以外是按钮栏
 const rangeRaw = (head: number, wc: number) => {
   const a = Math.max(0, Math.floor(head - wc)), b = Math.min(N - 1, Math.floor(head));
   let lo = Infinity, hi = -Infinity;
@@ -278,7 +279,7 @@ const Daily: React.FC<{f: number}> = ({f}) => {
       const nxt = k < EVENTS.length - 1 ? EVENTS[k + 1].at : T1 - 6;
       if (f < e.at - 2 || f > nxt + 6) return null;
       const o2 = k01(f, e.at - 2, 6) * (1 - k01(f, nxt - 2, 8));
-      return <div key={e.d} style={{position: 'absolute', left: 60, top: 1500, display: 'flex', gap: 24, alignItems: 'center', fontFamily: 'NSans', opacity: o2, transform: `translateY(${20 * (1 - outq(k01(f, e.at - 2, 10)))}px)`}}>
+      return <div key={e.d} style={{position: 'absolute', left: 70, top: 540, maxWidth: 900, filter: 'drop-shadow(0 0 18px rgba(0,0,0,0.95))', display: 'flex', gap: 24, alignItems: 'center', fontFamily: 'NSans', opacity: o2, transform: `translateY(${20 * (1 - outq(k01(f, e.at - 2, 10)))}px)`}}>
         {e.face && <Img src={staticFile('wm/huang2.jpg')} style={{width: 150, height: 150, borderRadius: 75, objectFit: 'cover', filter: 'grayscale(1)', border: '4px solid rgba(255,255,255,0.8)'}} />}
         <div>
           <div style={{fontSize: 30, color: '#bbb', fontWeight: 500}}>{e.date}</div>
@@ -288,12 +289,12 @@ const Daily: React.FC<{f: number}> = ({f}) => {
       </div>;
     })}
     {/* 11/20 大跌（L01 巨型跌幅 + L04 徽章） */}
-    {f >= T1 && f < DIVE0 && <div style={{position: 'absolute', left: 50, top: 1420, fontFamily: 'NSans', opacity: 1 - k01(f, DIVE0 - 16, 16)}}>
+    {f >= T1 && f < DIVE0 && <div style={{position: 'absolute', left: 70, top: 540, filter: 'drop-shadow(0 0 18px rgba(0,0,0,0.9))', fontFamily: 'NSans', opacity: 1 - k01(f, DIVE0 - 16, 16)}}>
       <div style={{display: 'inline-block', background: DN, color: '#000', fontWeight: 700, fontSize: 40, padding: '4px 18px', borderRadius: 8, transform: `scale(${1.4 - 0.4 * outq(k01(f, T1, 10))})`, transformOrigin: 'left'}}>11.20 单日 −14.0%</div>
       <div style={{fontWeight: 700, fontSize: 150, color: DN, WebkitTextStroke: '6px #000', paintOrder: 'stroke fill', textShadow: '0 0 50px rgba(31,209,122,0.7)', transform: `scale(${1.6 - 0.6 * outq(k01(f, T1, 12))})`, transformOrigin: 'left'}}>−47.5%</div>
       <div style={{fontWeight: 700, fontSize: 40, color: '#fff', textShadow: sh}}>较 10.06 高点 · 一周蒸发 9010 亿美元</div>
     </div>}
-    {f >= DIVE0 && <div style={{position: 'absolute', left: 0, right: 0, top: 1560, textAlign: 'center', fontFamily: 'NSans', fontWeight: 700, fontSize: 72, color: GOLD, textShadow: sh, opacity: k01(f, DIVE0, 10)}}>11月23日 · 周一 · 美东 4:00</div>}
+    {f >= DIVE0 && <div style={{position: 'absolute', left: 0, right: 0, top: 590, zIndex: 5, filter: 'drop-shadow(0 0 16px rgba(0,0,0,0.95))', textAlign: 'center', fontFamily: 'NSans', fontWeight: 700, fontSize: 62, color: GOLD, textShadow: sh, opacity: k01(f, DIVE0, 10)}}>11月23日 · 周一 · 美东 4:00</div>}
   </AbsoluteFill>;
 };
 
@@ -328,14 +329,14 @@ const HUD: React.FC<{f: number}> = ({f}) => {
   const hh = headAt(f), ii = Math.min(N - 1, Math.max(0, Math.ceil(hh) - 1));
   const chg = f < DIVE1 ? (p / DAY[Math.max(0, ii - 1)][4] - 1) * 100 : (p / PREV - 1) * 100;
   const col = gold ? GOLD : f < DIVE1 ? (chg >= 0 ? UP : DN) : UP;
-  return <div style={{position: 'absolute', left: 50, top: 90, fontFamily: 'NSans', opacity: k01(f, 0, 10) * (1 - k01(f, TG, 10))}}>
+  return <div style={{position: 'absolute', left: 70, top: 225, fontFamily: 'NSans', opacity: k01(f, 0, 10) * (1 - k01(f, TG, 10))}}>
     <div style={{fontSize: 30, color: '#9aa4ae', fontWeight: 500}}>英伟达 NVDA · {sub} <span style={{color: '#666'}}>| 金融博物馆</span></div>
     <div style={{display: 'flex', alignItems: 'baseline', gap: 20}}>
       <span style={{fontSize: 150, fontWeight: 700, color: col, fontVariantNumeric: 'tabular-nums', textShadow: `0 0 30px ${col}55`}}>{p.toFixed(2)}</span>
       {gold && <span style={{fontSize: 40, fontWeight: 700, color: '#000', background: GOLD, padding: '2px 12px', borderRadius: 6}}>见顶</span>}
     </div>
     <div style={{fontSize: 40, color: '#fff', fontWeight: 700, marginTop: -10}}>{date}</div>
-    <div style={{position: 'absolute', left: 620, top: 50, width: 380, fontSize: 28, color: '#ccc', lineHeight: 1.5}}>
+    <div style={{position: 'absolute', left: 590, top: 50, width: 360, fontSize: 28, color: '#ccc', lineHeight: 1.5}}>
       <div>{f < DIVE1 ? '当日' : '较上周五收盘'} <b style={{color: chg >= 0 ? UP : DN}}>{chg >= 0 ? '▲' : '▼'}{Math.abs(chg).toFixed(1)}%</b></div>
       <div>较 10.06 高点 <b style={{color: vsH >= 0 ? UP : DN}}>{vsH >= 0 ? '▲' : '▼'}{Math.abs(vsH).toFixed(1)}%</b></div>
       <div>市值 <b style={{color: '#fff'}}>{cap(p)} 万亿美元</b></div>
@@ -344,7 +345,7 @@ const HUD: React.FC<{f: number}> = ({f}) => {
 };
 
 // ---------- 段 C/D：分时 + 火箭跟线 ----------
-const CX = 60, CWd = 960, CY = 620, CH = 760, LOv = 122, HIv = 176;
+const CX = 70, CWd = 940, CY = 760, CH = 700, LOv = 122, HIv = 176;
 const px = (m: number) => CX + (m / LM) * CWd;
 const py = (v: number) => CY + CH - ((v - LOv) / (HIv - LOv)) * CH;
 const camI = (f: number) => {
@@ -352,7 +353,7 @@ const camI = (f: number) => {
   const w = zin * (1 - zout * zout * (3 - 2 * zout));
   const S = 1 + 2.2 * w;
   const m = mAt(f), hx = px(m), hy = py(priceAt(m));
-  const P0 = [540, 1000], FT = [430, 1180];
+  const P0 = [540, 850], FT = [430, 1020];
   return {w, S, c: [P0[0] + (hx - P0[0]) * w, P0[1] + (hy - P0[1]) * w], F: [P0[0] + (FT[0] - P0[0]) * w, P0[1] + (FT[1] - P0[1]) * w]};
 };
 const Intraday: React.FC<{f: number}> = ({f}) => {
@@ -364,7 +365,7 @@ const Intraday: React.FC<{f: number}> = ({f}) => {
   const nShow = Math.max(1, MIN.findIndex((q) => q[0] > m));
   const pts = MIN.slice(0, nShow).map(([mm, v]) => [px(mm), py(v)]).concat([[px(m), py(p)]]);
   const path = pts.map(([x, y], i) => (i ? 'L' : 'M') + x.toFixed(1) + ',' + y.toFixed(1)).join(' ');
-  const area = path + ` L${px(m).toFixed(1)},${CY + CH} L${CX},${CY + CH} Z`;
+  const area = path + ` L${px(m).toFixed(1)},${H} L${CX},${H} Z`;
   const hy = py(p);
   const clouds = [146, 157, 166].flatMap((lvl, li) => Array.from({length: 6}, (_, j) => ({lvl, li, j, x0: px(296 + j * 8 + li * 3) + (random(`cx${li}${j}`) - 0.5) * 40, r: 30 + random(`cr${li}${j}`) * 30})));
   const iS = 1 / Math.sqrt(S);
@@ -378,21 +379,21 @@ const Intraday: React.FC<{f: number}> = ({f}) => {
   const ik = outq(k01(f, T2 + 6, T3 - T2 - 6));
   return <AbsoluteFill style={{opacity: o}}>
     {/* 底部：三大指数 + 逐笔（示意） */}
-    <div style={{position: 'absolute', left: 40, right: 40, top: 1450, display: 'flex', gap: 14, fontFamily: 'NSans'}}>
+    <div style={{position: 'absolute', left: 70, right: 70, top: 530, display: 'flex', gap: 14, fontFamily: 'NSans'}}>
       {L.map(([n, p0, p1]) => { const v = p0 + (p1 - p0) * (live ? ik : 0), pc = (v / p0 - 1) * 100; return <div key={n} style={{flex: 1, background: '#0d1117', border: `2px solid ${live ? UP : '#222'}`, borderRadius: 12, padding: '10px 14px'}}>
         <div style={{fontSize: 28, color: '#ccc', fontWeight: 700}}>{n}</div>
         <div style={{fontSize: 40, fontWeight: 700, color: live ? UP : '#ccc', fontVariantNumeric: 'tabular-nums'}}>{v.toLocaleString('en-US', {maximumFractionDigits: 0})}</div>
         <div style={{fontSize: 32, fontWeight: 700, color: '#fff', background: live ? UP : '#333', display: 'inline-block', padding: '0 10px', borderRadius: 6}}>{pc >= 0 ? '+' : ''}{pc.toFixed(2)}%</div>
       </div>; })}
     </div>
-    <div style={{position: 'absolute', left: 40, right: 40, top: 1640, fontFamily: 'monospace', fontSize: 28}}>
+    <div style={{display: 'none', position: 'absolute', left: 40, right: 40, top: 1640, fontFamily: 'monospace', fontSize: 28}}>
       <div style={{fontFamily: 'NSans', fontWeight: 700, fontSize: 28, color: '#fff', marginBottom: 4}}>逐笔成交（示意）</div>
       {tape.slice(0, 4).map((t, i) => <div key={t.s} style={{display: 'flex', justifyContent: 'space-between', padding: '2px 12px', background: live && t.big ? `rgba(255,59,59,${0.55 - i * 0.1})` : 'transparent', color: live ? UP : '#aaa', fontWeight: t.big ? 700 : 400}}>
         <span>{t.px.toFixed(2)}</span><span style={{color: '#fff'}}>{t.vol.toLocaleString()}{live && t.big ? ' 大单买' : ''}</span></div>)}
     </div>
-    <div style={{position: 'absolute', left: 40, bottom: 20, fontFamily: 'NSans', fontSize: 22, color: 'rgba(255,255,255,0.5)'}}>Yahoo Finance 1 分钟分时（美东 4:00–12:00）· 逐笔为示意 {seed < 0 ? '' : ''}</div>
+    <div style={{position: 'absolute', left: 70, top: 1580, fontFamily: 'NSans', fontSize: 20, color: 'rgba(255,255,255,0.5)'}}>Yahoo Finance 1 分钟分时（美东 4:00–12:00） {seed < 0 ? '' : ''}</div>
     {/* 分时图层：火箭段铺满全屏 */}
-    <div style={{position: 'absolute', inset: 0, clipPath: `inset(${(CY - 60) * (1 - w)}px 0px ${(H - CY - CH - 50) * (1 - w)}px 0px)`}}>
+    <div style={{position: 'absolute', inset: 0, clipPath: `inset(${(CY - 60) * (1 - w)}px 0px 0px 0px)`}}>
       <div style={{position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 40% 65%, rgb(95,10,10), rgb(3,4,7))', opacity: w}} />
       <svg width={W} height={H} style={{position: 'absolute', overflow: 'visible'}}>
         <Defs />
@@ -415,7 +416,7 @@ const Intraday: React.FC<{f: number}> = ({f}) => {
           {live && <path d={path} fill="none" stroke={UP} strokeWidth={20 * iS} filter="url(#bl6)" />}
           <path d={path} fill="none" stroke={live ? (w > 0.3 ? '#fff0ea' : UP) : '#cfd6dd'} strokeWidth={(live ? 6 : 4) * iS} strokeLinejoin="round" />
           {live && <line x1={px(NEWS)} x2={px(NEWS)} y1={CY} y2={CY + CH} stroke={GOLD} strokeWidth={2} strokeDasharray="6 6" />}
-          {live && <text x={px(NEWS) - 8} y={CY + 30} textAnchor="end" fontFamily="NSans" fontWeight={700} fontSize={22} fill={GOLD}>8:55 消息</text>}
+          {live && <text x={px(NEWS) - 8} y={CY + 30} textAnchor="end" fontFamily="NSans" fontWeight={700} fontSize={22} fill={GOLD} opacity={Math.max(0, 1 - 3 * w)}>8:55 消息</text>}
           {live && m > OPENM && <text x={px(OPENM) - 10} y={py(167.04) - 14} textAnchor="end" fontFamily="NSans" fontWeight={700} fontSize={26 * iS} fill={UP} stroke="#000" strokeWidth={5 * iS} paintOrder="stroke">开盘 167.04</text>}
           <Sparks f={f} from={T2} to={TR + 10} n={30} pos={(ff) => { const mm = mAt(ff); return [px(mm), py(priceAt(mm))]; }} color={() => GOLD} />
           <circle cx={px(m)} cy={hy} r={(30 + 8 * Math.sin(f / 4)) * iS} fill={live ? UP : '#cfd6dd'} opacity={0.6} filter="url(#bl12)" />
@@ -448,7 +449,7 @@ const Push: React.FC<{f: number}> = ({f}) => {
   if (f < a || f > T2 + s2f(2.2)) return null;
   const s = outq(k01(f, a, 14)) + 0.06 * Math.sin(k01(f, a + 10, 14) * Math.PI);
   const out = k01(f, T2 + s2f(1.8), 20);
-  return <div style={{position: 'absolute', left: 40, top: -220 + 290 * s - out * 340, width: 1000, padding: '24px 28px', borderRadius: 40, background: 'rgba(236,236,240,0.95)', boxShadow: '0 30px 80px rgba(0,0,0,0.6)', display: 'flex', gap: 22, alignItems: 'center', fontFamily: 'NSans', boxSizing: 'border-box'}}>
+  return <div style={{position: 'absolute', left: 70, top: -260 + 500 * s - out * 620, width: 940, padding: '24px 28px', borderRadius: 40, background: 'rgba(236,236,240,0.95)', boxShadow: '0 30px 80px rgba(0,0,0,0.6)', display: 'flex', gap: 22, alignItems: 'center', fontFamily: 'NSans', boxSizing: 'border-box'}}>
     <div style={{width: 100, height: 100, borderRadius: 24, background: '#76b900', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 28, flexShrink: 0}}>NVDA</div>
     <div style={{flex: 1}}>
       <div style={{display: 'flex', justifyContent: 'space-between', fontSize: 26, color: '#666'}}><span>突发 · 英伟达公告</span><span>美东 8:55</span></div>
@@ -468,18 +469,18 @@ const Grid9: React.FC<{f: number}> = ({f}) => {
   const live = f >= T5;
   const pop = live ? 1 + 0.08 * (1 - k01(f, T5, 20)) : 1;
   const beat = Math.max(0, ...ONSETS.map((b) => (f >= b ? 1 - (f - b) / 14 : 0)).map((x) => Math.max(0, x)));
-  const X0 = 30, Y0 = 330, CW = 330, CHh = 470, GAP = 15;
+  const X0 = 40, Y0 = 370, CW = 323, CHh = 395, GAP = 15;
   return <AbsoluteFill style={{background: BG, opacity: o}}>
-    <div style={{position: 'absolute', left: 0, right: 0, top: 120, textAlign: 'center', fontFamily: 'NSans', fontWeight: 700}}>
+    <div style={{position: 'absolute', left: 0, right: 0, top: 225, textAlign: 'center', fontFamily: 'NSans', fontWeight: 700}}>
       <div style={{fontSize: 40, color: '#aaa'}}>{live ? '同一时刻' : '回到美东 8:55'}</div>
-      <div style={{fontSize: 72, color: live ? UP : '#fff', textShadow: sh}}>{live ? `一起跳涨 · 美东 ${tm(rev)}` : '黄仁勋复任消息发布'}</div>
+      <div style={{fontSize: 66, color: live ? UP : '#fff', textShadow: sh}}>{live ? `一起跳涨 · 美东 ${tm(rev)}` : '黄仁勋复任消息发布'}</div>
     </div>
     {GR.map(([sym, name, pc, pts], i) => {
       const r = Math.floor(i / 3), cc = i % 3;
       const x = X0 + cc * (CW + GAP), y = Y0 + r * (CHh + GAP);
       const vals = pts.map((q) => q[1]).concat([pc]);
       const lo = Math.min(...vals), hi = Math.max(...vals), pad = (hi - lo) * 0.12;
-      const L = 18, R = CW - 18, T = 150, Bt = CHh - 40;
+      const L = 14, R = CW - 14, T = 150, Bt = CHh - 34;
       const gx = (mm: number) => L + (mm / 480) * (R - L);
       const gy = (v: number) => Bt - ((v - lo + pad) / (hi - lo + 2 * pad)) * (Bt - T);
       const seen = pts.filter((q) => q[0] <= rev);
@@ -491,9 +492,9 @@ const Grid9: React.FC<{f: number}> = ({f}) => {
       const center = sym === 'NVDA';
       const isIdx = sym === 'IXIC' || sym === 'SPX' || sym === 'DJI';
       return <div key={sym} style={{position: 'absolute', left: x, top: y, width: CW, height: CHh, borderRadius: 16, background: live ? 'rgba(255,59,59,0.10)' : '#0b0f14', border: `3px solid ${live ? UP : center ? GOLD : '#222a33'}`, boxShadow: live ? `0 0 ${20 + 40 * (1 - k01(f, T5, 40)) + 24 * beat}px rgba(255,59,59,0.6)` : 'none', transform: `scale(${pop + 0.02 * beat})`, overflow: 'hidden', fontFamily: 'NSans'}}>
-        <div style={{position: 'absolute', left: 18, top: 12, fontWeight: 700, fontSize: 38, color: center ? GOLD : '#fff'}}>{name}</div>
-        <div style={{position: 'absolute', left: 18, top: 62, fontWeight: 700, fontSize: 34, color: live ? UP : '#ccc', fontVariantNumeric: 'tabular-nums'}}>{last[1].toLocaleString('en-US', {maximumFractionDigits: last[1] > 1000 ? 0 : 2, minimumFractionDigits: last[1] > 1000 ? 0 : 2})}</div>
-        <div style={{position: 'absolute', right: 14, top: 60, fontWeight: 700, fontSize: 38, color: '#fff', background: live ? UP : '#333', padding: '0 10px', borderRadius: 8, fontVariantNumeric: 'tabular-nums', transform: `scale(${live ? 1 + 0.3 * (1 - k01(f, T5, 20)) : 1})`}}>{pct >= 0 ? '+' : ''}{pct.toFixed(1)}%</div>
+        <div style={{position: 'absolute', left: 14, top: 8, fontWeight: 700, fontSize: 34, color: center ? GOLD : '#fff'}}>{name}</div>
+        <div style={{position: 'absolute', left: 14, top: 52, fontWeight: 700, fontSize: 30, color: live ? UP : '#ccc', fontVariantNumeric: 'tabular-nums'}}>{last[1].toLocaleString('en-US', {maximumFractionDigits: last[1] > 1000 ? 0 : 2, minimumFractionDigits: last[1] > 1000 ? 0 : 2})}</div>
+        <div style={{position: 'absolute', left: 14, top: 92, fontWeight: 700, fontSize: 34, color: '#fff', background: live ? UP : '#333', padding: '0 10px', borderRadius: 8, fontVariantNumeric: 'tabular-nums', transform: `scale(${live ? 1 + 0.3 * (1 - k01(f, T5, 20)) : 1})`}}>{pct >= 0 ? '+' : ''}{pct.toFixed(1)}%</div>
         <svg width={CW} height={CHh} style={{position: 'absolute', left: 0, top: 0}}>
           <Defs />
           <line x1={L} x2={R} y1={gy(pc)} y2={gy(pc)} stroke="rgba(255,255,255,0.3)" strokeDasharray="6 5" />
@@ -503,11 +504,11 @@ const Grid9: React.FC<{f: number}> = ({f}) => {
           <path d={d} fill="none" stroke={live ? '#ffd9d2' : '#cfd6dd'} strokeWidth={live ? 3.5 : 3} strokeLinejoin="round" />
           <circle cx={gx(last[0])} cy={gy(last[1])} r={live ? 9 + 3 * Math.sin(f / 4) : 6} fill={live ? '#fff' : '#cfd6dd'} />
           {live && <Firework f={f} at={T5} x={gx(last[0])} y={gy(last[1])} c={i % 2 ? GOLD : UP} n={28} big={0.5} />}
-          <text x={R} y={Bt + 28} textAnchor="end" fontSize={20} fill="rgba(255,255,255,0.45)">{isIdx ? '9:30 开盘前不交易' : '4:00 → 12:00'}</text>
+          <text x={R} y={Bt + 24} textAnchor="end" fontSize={17} fill="rgba(255,255,255,0.45)">{isIdx ? '9:30 开盘前不交易' : '4:00 → 12:00'}</text>
         </svg>
       </div>;
     })}
-    <div style={{position: 'absolute', left: 30, bottom: 50, fontFamily: 'NSans', fontSize: 22, color: 'rgba(255,255,255,0.5)'}}>Yahoo Finance 1 分钟分时 · 金线 = 8:55 消息 · 指数开盘前按上周五收盘画平</div>
+    <div style={{position: 'absolute', left: 40, top: 1600, fontFamily: 'NSans', fontSize: 20, color: 'rgba(255,255,255,0.45)'}}>Yahoo Finance 1 分钟分时 · 金线 = 8:55 消息 · 指数开盘前按上周五收盘画平</div>
   </AbsoluteFill>;
 };
 
@@ -520,8 +521,8 @@ const CARDS: [number, string, string, string][] = [
 ];
 const Stack: React.FC<{f: number}> = ({f}) => {
   if (f < TEND) return null;
-  return <AbsoluteFill style={{background: BG, opacity: k01(f, TEND, 6)}}>
-    <div style={{position: 'absolute', left: 0, right: 0, top: 260, textAlign: 'center', fontFamily: 'NSans'}}>
+  return <AbsoluteFill style={{background: `radial-gradient(ellipse at 50% 110%, rgba(150,20,20,0.55), ${BG} 60%)`, opacity: k01(f, TEND, 6)}}>
+    <div style={{position: 'absolute', left: 0, right: 0, top: 230, textAlign: 'center', fontFamily: 'NSans'}}>
       <div style={{fontSize: 40, color: '#aaa', fontWeight: 700}}>2026年11月23日</div>
       <div style={{fontFamily: 'NSerif', fontWeight: 900, fontSize: 110, color: '#fff'}}>黄仁勋回来了</div>
     </div>
@@ -529,16 +530,16 @@ const Stack: React.FC<{f: number}> = ({f}) => {
       if (f < at) return null;
       const later = CARDS.filter((cd) => f >= cd[0]).length - 1 - i;
       const k = outq(k01(f, at, 14));
-      const y = 560 + i * 280 + 100 * (1 - k);
-      return <div key={i} style={{position: 'absolute', left: 90, width: 900, top: y, height: 250, borderRadius: 22, background: 'rgba(30,8,8,0.92)', border: `3px solid ${i === CARDS.length - 1 ? GOLD : UP}`, boxShadow: `0 0 40px rgba(255,59,59,0.35)`, opacity: k * (1 - 0.35 * Math.min(1, later)), transform: `scale(${1.15 - 0.15 * k - 0.04 * Math.min(1, later)})`, fontFamily: 'NSans', padding: '24px 40px', boxSizing: 'border-box'}}>
-        <div style={{fontSize: 38, color: '#ddd', fontWeight: 700}}>{t}</div>
+      const y = 430 + i * 238 + 100 * (1 - k);
+      return <div key={i} style={{position: 'absolute', left: 90, width: 900, top: y, height: 218, borderRadius: 22, background: 'rgba(30,8,8,0.92)', border: `3px solid ${i === CARDS.length - 1 ? GOLD : UP}`, boxShadow: `0 0 40px rgba(255,59,59,0.35)`, opacity: k * (1 - 0.35 * Math.min(1, later)), transform: `scale(${1.15 - 0.15 * k - 0.04 * Math.min(1, later)})`, fontFamily: 'NSans', padding: '16px 36px', boxSizing: 'border-box'}}>
+        <div style={{fontSize: 34, color: '#ddd', fontWeight: 700}}>{t}</div>
         <div style={{display: 'flex', alignItems: 'baseline', gap: 24}}>
-          <span style={{fontSize: 130, fontWeight: 700, color: i === CARDS.length - 1 ? GOLD : UP, textShadow: sh}}>{big}</span>
+          <span style={{fontSize: 108, lineHeight: 1.1, fontWeight: 700, color: i === CARDS.length - 1 ? GOLD : UP, textShadow: sh}}>{big}</span>
           <span style={{fontSize: 44, color: '#fff', fontWeight: 700}}>{sub}</span>
         </div>
       </div>;
     })}
-    <div style={{position: 'absolute', left: 0, right: 0, bottom: 120, textAlign: 'center', fontFamily: 'NSans', fontSize: 26, color: '#888'}}>数据：Yahoo Finance · 逐笔为示意 · 本视频不构成任何投资建议 · 金融博物馆</div>
+    <div style={{position: 'absolute', left: 0, right: 0, top: 1600, textAlign: 'center', fontFamily: 'NSans', fontSize: 24, color: '#888'}}>数据：Yahoo Finance · 逐笔为示意 · 本视频不构成任何投资建议 · 金融博物馆</div>
   </AbsoluteFill>;
 };
 
@@ -577,10 +578,10 @@ export const MV4: React.FC = () => {
       <Daily f={f} />
       <Intraday f={f} />
       <HUD f={f} />
-      {intro && <div style={{position: 'absolute', left: 0, right: 0, top: 1380, textAlign: 'center', fontFamily: 'NSerif', fontWeight: 900, color: '#fff', textShadow: sh, opacity: k01(f, 0, 14) * (1 - k01(f, TPEAK - 12, 14)), transform: `scale(${1.08 - 0.08 * outq(k01(f, 0, 40))})`}}>
-        <div style={{fontSize: 64, color: '#cfd6dd'}}>一个视频</div>
-        <div style={{fontSize: 84}}>用可视化数据带你看懂</div>
-        <div style={{fontSize: 96, color: GOLD}}>英伟达这次的跌宕起伏</div>
+      {intro && <div style={{position: 'absolute', left: 0, right: 0, top: 740, textAlign: 'center', filter: 'drop-shadow(0 0 24px rgba(0,0,0,0.95)) drop-shadow(0 0 8px rgba(0,0,0,0.9))', fontFamily: 'NSerif', fontWeight: 900, color: '#fff', textShadow: sh, opacity: k01(f, 0, 14) * (1 - k01(f, TPEAK - 12, 14)), transform: `scale(${1.08 - 0.08 * outq(k01(f, 0, 40))})`}}>
+        <div style={{fontSize: 70, color: '#cfd6dd'}}>一个视频</div>
+        <div style={{fontSize: 80}}>用可视化数据带你看懂</div>
+        <div style={{fontSize: 86, color: GOLD}}>英伟达这次的跌宕起伏</div>
       </div>}
       <Grid9 f={f} />
       <Stack f={f} />
